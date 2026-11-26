@@ -70,7 +70,12 @@ header { display: grid; gap: 12px; }
 .panel-title .sub { font-size: 12px; color: var(--ink-3); }
 .legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12.5px; color: var(--ink-2); }
 .legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
-.chart { position: relative; width: 100%; }
+.chart { position: relative; width: 100%; user-select: none; -webkit-user-select: none; cursor: crosshair; }
+.chart .pin { cursor: pointer; }
+.zoom-out { font: 500 13px var(--font-body); color: var(--bg); background: var(--s1); border: 0; border-radius: 8px; padding: 6px 11px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.zoom-out .zl { font: 400 12px var(--font-data); opacity: 0.85; }
+.zoom-out:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.hint { font-size: 12px; color: var(--ink-3); }
 .chart svg { display: block; width: 100%; overflow: visible; }
 .chart text { font-family: var(--font-data); font-size: 11px; fill: var(--ink-3); }
 .tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px;
@@ -141,6 +146,7 @@ section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-w
         <div class="seg" id="tickers" role="group" aria-label="Company"></div></div>
       <div><span class="ctl-label">Range</span>
         <div class="seg" id="ranges" role="group" aria-label="Time range"></div></div>
+      <button type="button" class="zoom-out" id="zoom-out" hidden><span aria-hidden="true">⤢</span> Zoom out <span class="zl" id="zoom-label"></span></button>
       <label class="chk"><input type="checkbox" id="t-core" checked> Core P/E</label>
       <label class="chk"><input type="checkbox" id="t-spx" checked> S&amp;P 500</label>
       <label class="chk"><input type="checkbox" id="t-ev" checked> Events</label>
@@ -149,6 +155,7 @@ section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-w
     <div class="card">
       <div class="panel-title"><h2 id="pe-title">Trailing P/E</h2><span class="sub">price ÷ last four quarters of diluted EPS, stepped on each 10-Q/10-K filing date</span></div>
       <div class="legend" id="pe-legend"></div>
+      <div class="hint">Drag across any chart to zoom in. Double-click or use Zoom out to go back.</div>
       <div class="chart" id="pe-chart"></div>
       <div class="event-detail" id="event-detail">Hover or tap a numbered pin to read the event.</div>
     </div>
@@ -199,7 +206,7 @@ section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-w
 const DATA = JSON.parse(document.getElementById("data").textContent);
 const T = DATA.tickers, SPX = DATA.spx, EVENTS = DATA.events;
 const NAMES = { GOOG: "Alphabet", MSFT: "Microsoft", AAPL: "Apple", AMZN: "Amazon", META: "Meta", NVDA: "Nvidia" };
-const state = { t: "GOOG", range: "all", core: true, spx: true, ev: true, pinned: null };
+const state = { t: "GOOG", range: "all", core: true, spx: true, ev: true, pinned: null, zoom: null };
 const $ = (id) => document.getElementById(id);
 const NS = "http://www.w3.org/2000/svg";
 const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
@@ -229,8 +236,46 @@ function figs() {
 
 /* ---------- shared x scale ---------- */
 let X = null;
+/* shared hover: the cursor anywhere on a chart card (title, legend, axes, pins) moves one
+   vertical line through all three panels; the tooltip shows in the panel being hovered */
+const PANELS = {};
+function hoverAt(clientX, clientY, srcId) {
+  const src = PANELS[srcId]; if (!src) return;
+  const r = src.svg.getBoundingClientRect(); if (!r.width) return;
+  let d = src.x.inv((clientX - r.left) * (src.W / r.width));
+  if (d < src.x.a) d = src.x.a; if (d > src.x.b) d = src.x.b;
+  if (PANELS["pe-chart"]) d = PANELS["pe-chart"].snap(d);
+  for (const id in PANELS) { const p = PANELS[id]; const hx = p.x(d);
+    p.hair.setAttribute("x1", hx); p.hair.setAttribute("x2", hx); p.hair.setAttribute("visibility", "visible");
+    if (id === srcId) p.tip(d, hx, clientY); else { hideTip(p.box); p.end && p.end(); } }
+}
+function hoverEnd() { for (const id in PANELS) { const p = PANELS[id]; p.hair.setAttribute("visibility", "hidden"); hideTip(p.box); p.end && p.end(); } }
+/* drag-to-zoom: press and drag across any chart (mouse or pen) to zoom all three panels to that span */
+let drag = null;
+function dateAt(id, clientX) { const p = PANELS[id]; const r = p.svg.getBoundingClientRect();
+  let d = p.x.inv((clientX - r.left) * (p.W / r.width)); if (d < p.x.a) d = p.x.a; if (d > p.x.b) d = p.x.b; return d; }
+function showSel(a, b) { for (const id in PANELS) { const p = PANELS[id]; const x1 = p.x(a < b ? a : b), x2 = p.x(a < b ? b : a);
+  p.sel.setAttribute("x", x1); p.sel.setAttribute("width", Math.max(0, x2 - x1)); p.sel.setAttribute("visibility", "visible"); } }
+function hideSel() { for (const id in PANELS) PANELS[id].sel.setAttribute("visibility", "hidden"); }
+["pe-chart", "rev-chart", "ni-chart"].forEach(id => { const card = document.getElementById(id).closest(".card");
+  card.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "touch" || e.button !== 0 || e.target.closest("button, .pin, a, input")) { hoverAt(e.clientX, e.clientY, id); return; }
+    if (!e.target.closest(".chart")) return;
+    e.preventDefault(); drag = { id, x0: e.clientX, a: dateAt(id, e.clientX), moved: false }; card.setPointerCapture(e.pointerId); });
+  card.addEventListener("pointermove", (e) => {
+    if (drag && drag.id === id) { if (Math.abs(e.clientX - drag.x0) > 5) drag.moved = true;
+      if (drag.moved) { hoverEnd(); showSel(drag.a, dateAt(id, e.clientX)); return; } }
+    hoverAt(e.clientX, e.clientY, id); });
+  card.addEventListener("pointerup", (e) => { if (!drag || drag.id !== id) return; const d = drag; drag = null; hideSel();
+    if (!d.moved) return; let a = d.a, b = dateAt(id, e.clientX); if (a > b) [a, b] = [b, a];
+    if (b - a < 21 * 864e5) return; // ignore spans under three weeks
+    state.zoom = [a, b]; render(); hoverAt(e.clientX, e.clientY, id); });
+  card.addEventListener("pointercancel", () => { drag = null; hideSel(); });
+  card.addEventListener("pointerleave", () => { if (!drag) hoverEnd(); });
+  card.addEventListener("dblclick", () => { if (state.zoom) { state.zoom = null; render(); } }); });
 function domain() {
   const w = T[state.t].weekly; const end = D(w[w.length - 1][0]);
+  if (state.zoom) return [new Date(Math.max(+state.zoom[0], +D(w[0][0]))), new Date(Math.min(+state.zoom[1], +end))];
   const yrs = { all: null, "5y": 5, "2y": 2, "1y": 1 }[state.range];
   let start = yrs ? new Date(Date.UTC(end.getUTCFullYear() - yrs, end.getUTCMonth(), end.getUTCDate())) : D(w[0][0]);
   if (start < D(w[0][0])) start = D(w[0][0]);
@@ -296,20 +341,20 @@ function pePanel() {
       g.addEventListener("pointerenter", show); g.addEventListener("focus", show); g.addEventListener("click", () => { state.pinned = e.n; show(); pePanel(); });
     });
   }
-  // crosshair
-  const hair = el("line", { y1: m.t, y2: H - m.b, stroke: css("--ink-3"), "stroke-width": 1, visibility: "hidden" }, svg);
-  const hit = el("rect", { x: m.l, y: m.t + 0, width: W - m.l - m.r, height: H - m.t - m.b, fill: "transparent" }, svg);
-  svg.insertBefore(hit, evG); // pins stay above the hit area
-  const move = (ev) => { const r = svg.getBoundingClientRect(); const px = (ev.clientX - r.left) * (W / r.width); const d = x.inv(px);
-    let best = wk[0]; for (const p of wk) if (Math.abs(p.d - d) < Math.abs(best.d - d)) best = p;
-    let sb = sp[0]; for (const p of sp) if (Math.abs(p.d - best.d) < Math.abs(sb.d - best.d)) sb = p;
-    const hx = x(best.d); hair.setAttribute("x1", hx); hair.setAttribute("x2", hx); hair.setAttribute("visibility", "visible");
-    const rows = [[`${state.t} P/E`, fx(best.pe), css("--s1")]]; if (state.core) rows.push(["excl. one-offs", fx(best.core), css("--s2")]);
-    if (state.spx && sb) rows.push([sb.est ? "S&P 500 (est.)" : "S&P 500", fx(sb.v), css("--ref"), true]);
-    rows.push(["price", "$" + best.px.toFixed(2), "transparent"]);
-    tipAt(box, hx * (r.width / W), (ev.clientY - r.top), rows, "week of " + fmtD(best.d)); };
-  hit.addEventListener("pointermove", move); hit.addEventListener("pointerdown", move);
-  hit.addEventListener("pointerleave", () => { hair.setAttribute("visibility", "hidden"); hideTip(box); });
+  // crosshair: driven by the card-level hover handler (hoverAt), so it follows the cursor anywhere on the card
+  const hair = el("line", { y1: m.t, y2: H - m.b, stroke: css("--ink-2"), "stroke-width": 1, visibility: "hidden", "pointer-events": "none" });
+  svg.insertBefore(hair, evG); // pins stay above the line
+  const nearest = (d) => { let best = wk[0]; for (const p of wk) if (Math.abs(p.d - d) < Math.abs(best.d - d)) best = p; return best; };
+  const sel = el("rect", { y: m.t, height: H - m.t - m.b, fill: css("--s1"), "fill-opacity": 0.14, stroke: css("--s1"), "stroke-opacity": 0.5, visibility: "hidden", "pointer-events": "none" }, svg);
+  PANELS["pe-chart"] = { box, svg, W, x, hair, sel,
+    snap: (d) => nearest(d).d,
+    tip: (d, hx, clientY) => { const best = nearest(d);
+      let sb = sp[0]; for (const p of sp) if (Math.abs(p.d - best.d) < Math.abs(sb.d - best.d)) sb = p;
+      const rows = [[`${state.t} P/E`, fx(best.pe), css("--s1")]]; if (state.core) rows.push(["excl. one-offs", fx(best.core), css("--s2")]);
+      if (state.spx && sb) rows.push([sb.est ? "S&P 500 (est.)" : "S&P 500", fx(sb.v), css("--ref"), true]);
+      rows.push(["price", "$" + best.px.toFixed(2), "transparent"]);
+      const sr = svg.getBoundingClientRect(), br = box.getBoundingClientRect();
+      tipAt(box, hx * (sr.width / W), clientY - br.top, rows, "week of " + fmtD(best.d)); } };
   // legend + title
   $("pe-title").textContent = `${NAMES[state.t]} (${state.t}) trailing P/E`;
   const lg = $("pe-legend"); lg.replaceChildren();
@@ -331,15 +376,23 @@ function barPanel(id, getVals, stacked) {
   const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, height: H, role: "img" }, box);
   axes(svg, x, y, yt, H, m, W, v => "$" + v);
   const n = Math.max(rows.length, 1); const bw = Math.max(1.5, Math.min(22, (W - m.l - m.r) / n - 2));
+  const bars = [];
   rows.forEach(r => { const cx = x(new Date(+r.d - 45 * 864e5)); if (cx < m.l - 2) return; let pos = 0, neg = 0;
-    const g = el("g", { style: "cursor:default" }, svg);
+    const g = el("g", { style: "transition: opacity .12s" }, svg);
+    bars.push({ g, cx, r, qn: `Q${Math.floor(r.d.getUTCMonth() / 3) + 1} ${r.d.getUTCFullYear()} (quarter ended ${fmtD(r.d)})` });
     r.parts.forEach(p => { if (p.v == null || p.v === 0) return; const a = p.v > 0 ? pos : neg, b = a + p.v; if (p.v > 0) pos = b; else neg = b;
       const y1 = y(Math.max(a, b)), y2 = y(Math.min(a, b)); el("rect", { x: cx - bw / 2, y: y1 + (stacked && a !== 0 ? 1 : 0), width: bw, height: Math.max(1, y2 - y1 - (stacked && a !== 0 ? 1 : 0)), rx: Math.min(2, bw / 4), fill: css(p.c) }, g); });
-    const hitR = el("rect", { x: cx - Math.max(bw, 8) / 2, y: m.t, width: Math.max(bw, 8), height: H - m.t - m.b, fill: "transparent" }, g);
-    const qn = `Q${Math.floor(r.d.getUTCMonth() / 3) + 1} ${r.d.getUTCFullYear()} (quarter ended ${fmtD(r.d)})`;
-    const show = (ev) => { const bb = svg.getBoundingClientRect(); tipAt(box, cx * (bb.width / W), (ev.clientY || bb.top + 20) - bb.top, r.parts.map(p => [p.label, p.v == null ? "–" : money(p.v), css(p.c)]), qn); };
-    hitR.addEventListener("pointermove", show); hitR.addEventListener("pointerdown", show); hitR.addEventListener("pointerleave", () => hideTip(box)); });
+  });
   if (lo < 0) el("line", { x1: m.l, x2: W - m.r, y1: y(0), y2: y(0), stroke: css("--ink-3"), "stroke-width": 1 }, svg);
+  const hair = el("line", { y1: m.t, y2: H - m.b, stroke: css("--ink-2"), "stroke-width": 1, visibility: "hidden", "pointer-events": "none" }, svg);
+  const sel = el("rect", { y: m.t, height: H - m.t - m.b, fill: css("--s1"), "fill-opacity": 0.14, stroke: css("--s1"), "stroke-opacity": 0.5, visibility: "hidden", "pointer-events": "none" }, svg);
+  PANELS[id] = { box, svg, W, x, hair, sel,
+    tip: (d, hx, clientY) => { if (!bars.length) return;
+      let b = bars[0]; for (const c of bars) if (Math.abs(c.cx - hx) < Math.abs(b.cx - hx)) b = c;
+      bars.forEach(c => c.g.style.opacity = c === b ? 1 : 0.45);
+      const sr = svg.getBoundingClientRect(), br = box.getBoundingClientRect();
+      tipAt(box, b.cx * (sr.width / W), clientY - br.top, b.r.parts.map(p => [p.label, p.v == null ? "–" : money(p.v), css(p.c)]), b.qn); },
+    end: () => bars.forEach(c => c.g.style.opacity = 1) };
 }
 const taxRate = (d) => d < D("2018-01-01") ? 0.35 : 0.21;
 function revPanel() { barPanel("rev-chart", r => [{ v: r.rev, c: "--bar", label: "revenue" }]); }
@@ -380,8 +433,11 @@ function method() { const ul = $("method"); ul.replaceChildren(); DATA.method.fo
 /* ---------- controls ---------- */
 function controls() {
   const tk = $("tickers"); tk.replaceChildren(); Object.keys(T).forEach(t => { const b = h("button", null, t); b.setAttribute("aria-pressed", t === state.t); b.onclick = () => { state.t = t; render(); }; tk.append(b); });
-  const rg = $("ranges"); rg.replaceChildren(); [["all", "2011–"], ["5y", "5Y"], ["2y", "2Y"], ["1y", "1Y"]].forEach(([k, lab]) => { const b = h("button", null, lab); b.setAttribute("aria-pressed", k === state.range); b.onclick = () => { state.range = k; render(); }; rg.append(b); });
+  const rg = $("ranges"); rg.replaceChildren(); [["all", "2011–"], ["5y", "5Y"], ["2y", "2Y"], ["1y", "1Y"]].forEach(([k, lab]) => { const b = h("button", null, lab); b.setAttribute("aria-pressed", k === state.range); b.setAttribute("aria-pressed", !state.zoom && k === state.range); b.onclick = () => { state.range = k; state.zoom = null; render(); }; rg.append(b); });
+  const zb = $("zoom-out"); zb.hidden = !state.zoom;
+  if (state.zoom) { const [a, b] = domain(); $("zoom-label").textContent = `${fmtD(a)} – ${fmtD(b)}`; }
 }
+$("zoom-out").addEventListener("click", () => { state.zoom = null; render(); });
 ["core", "spx", "ev"].forEach(k => { $("t-" + k).addEventListener("change", e => { state[k] = e.target.checked; render(); }); });
 $("t-ev").closest("label").title = "Event pins are shown for GOOG";
 
