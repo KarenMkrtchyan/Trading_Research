@@ -1,0 +1,19 @@
+ticker,security_type,name,price_2026-11-25,ttm_revenue_usd_bn,ttm_revenue_yoy_pct,trailing_pe,forward_pe,pe_5y_median,eps_ttm,fiscal_year_end,notes
+TSLA,stock,Tesla,380.1400,103.9090,8.65,418.00,178.25,86.66,0.9094169999999999,2025-12-31,
+ANT,stock,Anthropic,82.7900,35.2820,,N/M,225.96,n/a,-9.145255,2025-12-31,Unprofitable; IPO 2026-11-19; trailing P/E N/M. TTM YoY n/a (short history); latest quarter YoY 1127%.
+ACMR,stock,ACM Research,40.2800,1.1363,29.07,24.73,15.50,17.20,1.6285550000000002,2025-12-31,
+LRCX,stock,Lam Research,185.0100,26.1279,33.36,27.53,17.99,23.62,6.720661,2026-06-28,
+GOOG,stock,Alphabet,270.9800,471.0980,22.21,14.15,19.27,24.03,19.154339999999998,2025-12-31,Trailing P/E pulled down by large Q2 2026 earnings.
+LULU,stock,lululemon,107.4400,11.0940,1.74,8.81,12.79,23.94,12.20035,2026-02-01,
+WM,stock,Waste Management,247.2900,26.0700,5.19,32.44,28.80,31.96,7.622659,2025-12-31,
+AVGO,stock,Broadcom,300.8600,89.1040,48.69,38.41,17.31,61.54,7.833235,2025-11-02,
+MU,stock,Micron,601.2500,133.1880,256.33,8.10,3.43,22.53,74.239779,2026-09-03,
+FTNT,stock,Fortinet,134.9600,7.8809,20.23,43.94,35.91,45.17,3.071439,2025-12-31,
+FSLR,stock,First Solar,147.8800,5.0142,-0.72,8.56,6.90,19.86,17.283021,2025-12-31,
+MRVL,stock,Marvell,130.9300,9.4503,30.62,43.21,23.21,58.88,3.0300700000000003,2026-01-31,
+TSM,stock,TSMC (ADR),342.3400,154.3830,33.10,22.33,16.57,26.04,15.328906590657901,2025-12-31,TWD converted to USD; ADR 1:5.
+RBLX,stock,Roblox,55.6300,5.8980,32.13,N/M,N/M,n/a,-1.366679,2025-12-31,Unprofitable; P/E N/M.
+VOO,etf,Vanguard S&P 500,658.8700,,,21.55,16.86,n/a,,,No company revenue. Aggregate P/E from StockAnalysis.com as of 2026-11-26.
+QQQ,etf,Invesco QQQ,633.9300,,,24.04,17.64,n/a,,,No company revenue. Aggregate P/E from StockAnalysis.com as of 2026-11-26.
+SOXX,etf,iShares Semiconductor,127.9800,,,22.28,12.89,n/a,,,No company revenue. Aggregate P/E from StockAnalysis.com as of 2026-11-26.
+VXUS,etf,Vanguard Total Intl,78.0200,,,14.02,10.80,n/a,,,No company revenue. Aggregate P/E from StockAnalysis.com as of 2026-11-26.
