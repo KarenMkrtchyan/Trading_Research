@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Which watchlist names are actually cheap?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+
+/* Layout: one reading column; three stacked panels share a single time axis (no dual axes), then peers, events, method. */
+:root {
+  --bg: #f7f8f6; --surface: #ffffff; --ink: #121513; --ink-2: #4a514c; --ink-3: #7b827d;
+  --rule: #e2e5e1; --grid: #eceeeb;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --ref: #6d736f; --bar: #86b6ef;
+  --good: #0ca30c; --warn: #b77a00; --crit: #d03b3b;
+  --font-display: "Familjen Grotesk", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121413; --surface: #1a1c1b; --ink: #eef0ed; --ink-2: #bfc5c0; --ink-3: #8a918c;
+  --rule: #2c302d; --grid: #242826;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --ref: #a3aaa5; --bar: #1c5cab;
+  --good: #0ca30c; --warn: #fab219; --crit: #e66767; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121413; --surface: #1a1c1b; --ink: #eef0ed; --ink-2: #bfc5c0; --ink-3: #8a918c;
+  --rule: #2c302d; --grid: #242826;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --ref: #a3aaa5; --bar: #1c5cab;
+  --good: #0ca30c; --warn: #fab219; --crit: #e66767; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 36px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(28px, 4.4vw, 42px); line-height: 1.08; font-weight: 700; }
+h2 { font-size: 22px; font-weight: 600; }
+h3 { font-size: 16px; font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font-family: var(--font-data); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+.lede { color: var(--ink-2); font-size: 16px; }
+header { display: grid; gap: 12px; }
+.num { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+
+/* headline figures */
+.figs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
+.fig { background: var(--surface); padding: 14px 16px; display: grid; gap: 2px; min-width: 0; }
+.fig .v { font-family: var(--font-data); font-size: 26px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.fig .k { font-size: 13px; color: var(--ink-2); }
+.fig .s { font-size: 12px; color: var(--ink-3); }
+.key { display: inline-block; width: 14px; height: 0; border-top: 2px solid; vertical-align: middle; margin-right: 6px; }
+.key.dash { border-top-style: dashed; }
+@media (max-width: 760px) { .figs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* controls */
+.controls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.controls > div { min-width: 0; max-width: 100%; }
+.seg { display: inline-flex; flex-wrap: wrap; max-width: 100%; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg button { font: 500 13px var(--font-body); color: var(--ink-2); background: transparent; border: 0; padding: 6px 11px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--rule); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.seg button:focus-visible, .chk input:focus-visible, select:focus-visible, .pin:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
+.chk { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; color: var(--ink-2); cursor: pointer; }
+.ctl-label { font-size: 12px; color: var(--ink-3); margin-right: 4px; }
+
+/* chart card */
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 18px 18px 10px; display: grid; gap: 6px; min-width: 0; }
+.panel-title { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; align-items: baseline; }
+.panel-title .sub { font-size: 12px; color: var(--ink-3); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12.5px; color: var(--ink-2); }
+.legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.chart { position: relative; width: 100%; user-select: none; -webkit-user-select: none; cursor: crosshair; }
+.chart .pin { cursor: pointer; }
+.zoom-out { font: 500 13px var(--font-body); color: var(--bg); background: var(--s1); border: 0; border-radius: 8px; padding: 6px 11px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.zoom-out .zl { font: 400 12px var(--font-data); opacity: 0.85; }
+.zoom-out:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.hint { font-size: 12px; color: var(--ink-3); }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart text { font-family: var(--font-data); font-size: 11px; fill: var(--ink-3); }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.12); padding: 8px 10px; font-size: 12px; min-width: 170px; z-index: 5; }
+.tip .d { color: var(--ink-3); font-family: var(--font-data); margin-bottom: 4px; }
+.tip .r { display: flex; justify-content: space-between; gap: 14px; align-items: center; }
+.tip .r b { font-family: var(--font-data); font-weight: 500; color: var(--ink); }
+.tip .r span { color: var(--ink-2); }
+.event-detail { min-height: 44px; font-size: 13.5px; color: var(--ink-2); border-top: 1px solid var(--grid); padding-top: 8px; }
+.event-detail b { color: var(--ink); }
+
+/* findings */
+.findings { display: grid; gap: 14px; }
+.finding { display: grid; grid-template-columns: 4px 1fr; gap: 14px; }
+.finding::before { content: ""; border-radius: 2px; background: var(--rule); }
+.finding.hi::before { background: var(--s2); }
+.finding h3 { margin-bottom: 4px; }
+.finding p { color: var(--ink-2); }
+
+/* tables */
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { padding: 8px 12px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--grid); }
+th:first-child, td:first-child { text-align: left; }
+th { font-weight: 600; color: var(--ink-2); font-size: 12px; background: var(--bg); position: sticky; top: 0; }
+td { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+tr.sel td { background: color-mix(in srgb, var(--s1) 10%, transparent); }
+tbody tr { cursor: pointer; }
+tbody tr:hover td { background: color-mix(in srgb, var(--ink) 4%, transparent); }
+.chip { display: inline-block; font: 500 11px var(--font-body); padding: 1px 7px; border-radius: 999px; border: 1px solid currentColor; }
+.chip.ok { color: var(--good); } .chip.fix { color: var(--warn); } .chip.pub { color: var(--ink-3); } .chip.new { color: var(--s1); }
+
+/* events */
+.events { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); }
+.events li { display: grid; grid-template-columns: 30px 92px 1fr; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--grid); align-items: start; }
+.events li:last-child { border-bottom: 0; }
+.events .n { font-family: var(--font-data); font-size: 12px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: var(--bg); }
+.events .dt { font-family: var(--font-data); font-size: 12.5px; color: var(--ink-3); padding-top: 2px; }
+.events .tx { min-width: 0; font-size: 13.5px; }
+.events .tx .ver { display: block; color: var(--ink-3); font-size: 12.5px; margin-top: 2px; }
+@media (max-width: 560px) { .events li { grid-template-columns: 26px 1fr; } .events .dt { grid-column: 2; padding: 0; } .events .tx { grid-column: 2; } }
+
+details { border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); padding: 10px 14px; }
+details summary { cursor: pointer; font-weight: 600; font-family: var(--font-display); }
+details[open] summary { margin-bottom: 10px; }
+.log { font-family: var(--font-data); font-size: 12px; color: var(--ink-2); white-space: pre-wrap; overflow-x: auto; margin: 0; }
+.method { display: grid; gap: 10px; font-size: 14px; color: var(--ink-2); }
+.method ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; max-width: 75ch; }
+.note { font-size: 12.5px; color: var(--ink-3); }
+section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+.imgcard { background: #fff; border-radius: 8px; border: 1px solid var(--rule); overflow-x: auto; }
+.imgcard img { display: block; width: 100%; min-width: 640px; height: auto; }
+.card h2 { font-size: 18px; }
+.cap { font-size: 12.5px; color: var(--ink-3); }
+th.s { cursor: pointer; } th.s:hover { color: var(--ink); } th.s[aria-sort="ascending"]::after { content: " \25B2"; } th.s[aria-sort="descending"]::after { content: " \25BC"; }
+tbody tr { cursor: default; }
+.learn { background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 16px 18px; display: grid; gap: 8px; }
+.learn ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--ink-2); max-width: 75ch; }
+.learn code, .num-inline { font-family: var(--font-data); font-size: 13px; }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); }
+.checks li { padding: 10px 14px; border-bottom: 1px solid var(--grid); font-size: 13.5px; color: var(--ink-2); }
+.checks li:last-child { border-bottom: 0; }
+.checks li b { color: var(--ink); }
+a { color: var(--s1); }
+ul.src { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; color: var(--ink-2); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow"><a href="../" style="color:inherit">Trading Research</a> · watchlist valuation · prices as of the Nov 25, 2026 close</div>
+    <h1>Which watchlist names are actually cheap? A low P/E is where the question starts.</h1>
+    <p class="lede">This page puts 14 stocks and 4 funds from one watchlist side by side on trailing P/E, forward P/E, revenue growth and each name's own history. Then it covers what those numbers hide: cycles, one-off gains, shared risks and different definitions. It builds on the <a href="../goog-valuation/">GOOG study</a>, which showed how one accounting item can make a stock look half its real price.</p>
+  </header>
+
+  <div class="figs">
+    <div class="fig"><span class="v">16.9x</span><span class="k">VOO forward P/E</span><span class="s">S&amp;P 500 fund, 21.6x trailing</span></div>
+    <div class="fig"><span class="v">12.9x</span><span class="k">SOXX forward P/E</span><span class="s">semiconductor fund, 22.3x trailing</span></div>
+    <div class="fig"><span class="v">+256%</span><span class="k">MU revenue growth</span><span class="s">fiscal 2026 vs fiscal 2025</span></div>
+    <div class="fig"><span class="v">418x</span><span class="k">TSLA trailing P/E</span><span class="s">on +8.7% revenue growth</span></div>
+  </div>
+
+  <section class="learn">
+    <h2>P/E in two minutes</h2>
+    <ul>
+      <li><b>P/E</b> is price divided by earnings per share. A P/E of 20 means you pay $20 for each $1 of yearly profit. Higher means the market expects more growth, or sees more safety, or is overpaying.</li>
+      <li><b>Trailing</b> P/E uses the last four reported quarters. It is a fact, but it looks backward. <b>Forward</b> P/E uses analysts' estimates for the next 12 months. It looks ahead, but estimates can be wrong and get revised.</li>
+      <li>Comparing the two shows what analysts expect. Forward below trailing means earnings are expected to rise. Forward above trailing means they are expected to fall, or that the trailing figure was inflated by something one-off.</li>
+      <li>A P/E means little without context: the company's growth, how steady its profit is, and what the same P/E meant for that company in the past.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Current trailing vs forward P/E</h2>
+    <div class="card">
+      <div class="imgcard"><img src="pe_snapshot.svg" alt="Bar chart of trailing and forward P/E for each watchlist name, cheapest trailing at the top"></div>
+      <p class="cap">Prices and trailing P/E from Webull (price ÷ last four quarters of diluted EPS). Forward P/E and fund P/Es from StockAnalysis.com, retrieved Nov 26, 2026. TSLA and ANT run off the scale and are labeled.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>The numbers side by side</h2>
+    <p class="note">Click a column header to sort. "vs own median" is trailing P/E divided by its 5-year median (below 1.0x means cheaper than usual for that company). "Implied EPS growth" is trailing ÷ forward − 1, which is what analyst estimates imply for the next 12 months. "Fwd P/E per point of growth" is forward P/E divided by TTM revenue growth in percentage points: a crude growth-adjusted price (lower means more growth per unit of P/E). n/m means not meaningful, usually because earnings are negative.</p>
+    <div class="tbl-wrap"><table id="grid">
+      <thead><tr><th class="s" data-k="0">Ticker</th><th class="s" data-k="1">TTM revenue growth</th><th class="s" data-k="2">Trailing P/E</th><th class="s" data-k="3">Forward P/E</th><th class="s" data-k="4">5y median P/E</th><th class="s" data-k="5">vs own median</th><th class="s" data-k="6">Implied EPS growth</th><th class="s" data-k="7">Fwd P/E per growth pt</th></tr></thead>
+      <tbody>
+__ROWS__
+      </tbody></table></div>
+    <p class="note">Data: <a href="data/watchlist_pe_revenue.csv">data/watchlist_pe_revenue.csv</a>. TSM is converted from Taiwan dollars. ANT listed on Nov 19, 2026 and has too little history for a TTM growth rate (its latest quarter is up about 1,127% year over year). RBLX and ANT are unprofitable, so their P/E is n/m.</p>
+  </section>
+
+  <section>
+    <h2>Trailing P/E history</h2>
+    <div class="card">
+      <div class="imgcard"><img src="pe_history.svg" alt="Small multiples of trailing P/E over five years, one panel per company, with the 5-year median marked"></div>
+      <p class="cap">Month-end price ÷ trailing four quarters of diluted EPS, one panel per company. Pink bands mark negative earnings (n/m), gray bands mark too little history. The gold dashed line is the 5-year median of valid months. A few panels cap the y-axis for readability and say so.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Revenue</h2>
+    <div class="card">
+      <div class="imgcard"><img src="revenue_history.svg" alt="Annual revenue for the last five fiscal years plus trailing twelve months, per company"></div>
+      <p class="cap">Company revenue in $ billions, last five fiscal years plus the trailing twelve months. Funds are left out because they have no revenue of their own.</p>
+    </div>
+    <div class="card">
+      <div class="imgcard"><img src="revenue_growth.svg" alt="Bar chart of trailing twelve month revenue growth, sorted"></div>
+      <p class="cap">Trailing-twelve-month revenue vs the prior twelve months. TSM is converted to dollars, so currency moves are inside its growth rate.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>What the numbers say, and what they hide</h2>
+    <div class="findings">
+      <div class="finding hi"><div><h3>Cheap on P/E is not the same as cheap</h3>
+        <p>The three lowest trailing P/Es are MU (8.1x), FSLR (8.6x) and LULU (8.8x). They are cheap for three different reasons. MU's profit exploded and the price has not caught up, but that profit is cyclical (next point). FSLR's revenue is flat at -0.7%, so its discount to its own 19.9x median is a "no growth" discount. LULU's forward P/E (12.8x) is higher than its trailing one (8.8x), so analysts expect earnings to fall. A low multiple on shrinking earnings is often a value trap, not a bargain.</p></div></div>
+      <div class="finding"><div><h3>Growth-adjusted, the AI supply chain looks cheaper than the rest</h3>
+        <p>Dividing forward P/E by revenue growth is a rough cousin of the PEG ratio (P/E divided by earnings growth). On that crude measure AVGO (0.36), TSM (0.50), ACMR (0.53) and LRCX (0.54) pay the least per point of growth, while WM (about 5.5), LULU (about 7.4) and TSLA (about 20.6) pay the most. Treat it as a screen, not an answer. Revenue growth is not earnings growth, margins can move either way, and growth from a hot cycle rarely lasts. In the table, the "implied EPS growth" column compares estimates with trailing results, which is why GOOG shows -27%: the trailing figure includes one-off gains, not because analysts expect the business to shrink.</p></div></div>
+      <div class="finding hi"><div><h3>Cyclicality: the lowest P/E often shows up at peak earnings</h3>
+        <p>Memory is the clearest case. Micron reported fiscal 2026 revenue of $133.19B against $37.38B the year before, and its gross margin went from 39.8% to 80.7% (operating margin from 26.1% to 74.6%). Fiscal Q4 revenue alone was $54.23B, up from $11.32B a year earlier, with GAAP EPS of $32.87 for that one quarter (<a href="https://investors.micron.com/news/press-release/2026/Micron-Technology-Inc--Reports-Record-Fiscal-Fourth-Quarter-and-Full-Year-2026-Results/default.aspx">Micron, Sep 30, 2026</a>). Four times that quarter is $131.48, which would put the stock at about 4.6x at a $601 price. That is arithmetic, not a forecast. Markets pay a low multiple for earnings they expect to fall back, and memory prices have a history of falling hard after peaks. For cyclical names, compare against average earnings through a full cycle, not the latest year. The same logic, at smaller scale, applies to semiconductor equipment (LRCX, ACMR) and foundry (TSM) earnings, which depend on customers' spending plans.</p></div></div>
+      <div class="finding hi"><div><h3>Earnings quality: check what is inside the E</h3>
+        <p>Alphabet's reported trailing P/E of 14.1x is the GOOG study's subject: $131B of $236B trailing net income was non-operating. The detail matters for this list. In Q2 2026, Alphabet booked a $99.0B gain on equity securities, and its 10-Q shows $94.1B of SpaceX shares among its holdings, plus a large stake in a private company widely identified as Anthropic (<a href="https://www.sec.gov/Archives/edgar/data/1652044/000165204426000066/googexhibit991q22026.htm">Q2 release</a>, <a href="https://fortune.com/2026/07/22/anthropic-spacex-investments-google-earnings-biggest-ever-profit-quarter/">Fortune</a>). In Q3 the line reversed to an $8.7B loss, mostly from SpaceX's lower share price (<a href="https://abc.xyz/investor/events/event-details/2026/2026-Q3-Earnings-Call-2026-Ujou16CTw9/default.aspx">Q3 call</a>). So part of GOOG's earnings now moves with the share prices of two other companies, SpaceX and Anthropic (ANT is on this watchlist). TSLA shows a different kind of gap: its trailing P/E is 418x on GAAP EPS of $0.91, but its adjusted EPS over the same four quarters is $1.72 ($0.48, $0.33, $0.41 and $0.50), about 221x. Forward P/Es are usually built on adjusted EPS, which is one reason forward and trailing figures are not always comparable (<a href="https://www.sec.gov/Archives/edgar/data/1318605/000162828026066738/exhibit9914.htm">Tesla Q3 2026 update</a>).</p></div></div>
+      <div class="finding"><div><h3>Shared risk: many cheap-looking names are one bet</h3>
+        <p>AVGO, MU, MRVL, TSM, LRCX, ACMR and SOXX (7 of the 18 tickers here) are all paid, directly or one step removed, out of AI data-center spending. Their forward P/Es look reasonable because estimates assume that spending continues. The spenders are funding it increasingly with borrowing and new shares: Alphabet's long-term debt went from $46.5B at Dec 31, 2025 to $125.1B at Sep 30, 2026, it raised $29.0B of debt and $12.4B of stock in Q3 alone, its Q3 free cash flow was -$9.1B, and it guides 2026 capex to $195B to $205B, with 2027 expected higher (<a href="https://www.sec.gov/Archives/edgar/data/1652044/000165204426000080/googexhibit991q32026.htm">Q3 release</a>, <a href="https://www.cnbc.com/2026/10/28/alphabet-googl-earnings-q3-2026.html">CNBC</a>). Credit markets are already pricing stress at the edges: CoreWeave's 2031 bonds yield almost 18%, and five-year default insurance on Oracle, Alphabet, SpaceX and CoreWeave hit record levels on Nov 25 (<a href="https://www.investing.com/news/stock-market-news/ai-stocks-slide-on-fears-over-infrastructure-buildout-costs-5050519">Reuters via Investing.com</a>). There is also circularity: Alphabet invests in Anthropic, and Anthropic has committed to buy at least five gigawatts of Google Cloud capacity (<a href="https://fortune.com/2026/07/22/anthropic-spacex-investments-google-earnings-biggest-ever-profit-quarter/">Fortune</a>). A funding squeeze would hit suppliers' revenue first and their multiples second, and diversifying across these tickers adds less safety than the ticker count suggests.</p></div></div>
+      <div class="finding"><div><h3>Interest rates sit under every P/E</h3>
+        <p>A P/E is partly a statement about the discount rate: when safe yields rise, the price paid per dollar of far-off profit falls, and long-duration growth stocks feel it most. Core PCE inflation was 3.3% in October, headline 3.8%, and markets fully price a quarter-point Fed hike at the Dec 8 to 9 meeting, with two more expected in 2027 (<a href="https://www.cnbc.com/2026/11/25/pce-inflation-report-october-2026.html">CNBC</a>). A P/E that looks fair at today's rates can look rich if rates keep rising, even with no change in the company.</p></div></div>
+      <div class="finding"><div><h3>Be careful which "market P/E" you compare against</h3>
+        <p>VOO's trailing P/E is 21.6x on StockAnalysis (a fund-level aggregate, retrieved Nov 26). The GOOG study's S&amp;P 500 line is 24.3x, built from Shiller's as-reported index earnings through Sep 2026, held flat after that. Both are reasonable and they answer slightly different questions: a different earnings definition, a different earnings date, and different weighting. Against 24.3x, GOOG's 25.2x ex-one-offs P/E looks "about market." Against VOO's 21.6x trailing, it is about 17% above. On forward numbers, GOOG is 19.3x vs VOO's 16.9x, about 14% above. The honest summary is "close to the market, probably at a modest premium," and the conclusion should not depend on which baseline you pick.</p></div></div>
+    </div>
+    <p class="note">This page is an analysis of valuation data, not a recommendation to buy or sell anything.</p>
+  </section>
+
+  <section>
+    <h2>What would change the picture</h2>
+    <p class="note">Questions to check as new reports arrive. None is a trade signal. A P/E tells you what you pay, not when anything will happen.</p>
+    <ul class="checks">
+      <li><b>Hyperscaler capex plans.</b> Alphabet's 2027 capex guidance comes with its Q4 results. Cuts or delays would lower estimates for chip and equipment suppliers, so their forward P/Es would rise even if prices did not move.</li>
+      <li><b>Funding conditions.</b> Watch whether spreads on CoreWeave-type debt and default-insurance costs keep widening, and whether the big spenders keep replacing buybacks with new debt and shares. Alphabet's diluted share count rose from 12.20B to 12.37B between Q3 2025 and Q3 2026.</li>
+      <li><b>Memory margins.</b> Whether Micron's gross margin (80.7% for fiscal 2026) holds or falls in its next report is the cleanest read on whether this is a peak.</li>
+      <li><b>Estimate revisions.</b> If analysts cut next-year EPS for a name, its forward P/E rises. Rising forward P/E with a flat price is a warning sign.</li>
+      <li><b>Rates and inflation.</b> The Dec 8 to 9 Fed meeting and the guidance on 2027 hikes feed straight into the multiples the market will pay.</li>
+      <li><b>Earnings quality.</b> For any name with a surprising P/E, read the income statement down to the unusual items (gains on investments, tax effects, adjusted vs GAAP EPS) before trusting the number.</li>
+    </ul>
+  </section>
+
+  <section class="method">
+    <h2>Data notes, caveats and corrections</h2>
+    <ul>
+      <li><b>Sources.</b> Prices, quarterly income statements and trailing EPS from Webull (read-only); annual revenue cross-checked to SEC EDGAR company facts and company filings for the US filers; forward P/E and fund P/Es from <a href="https://stockanalysis.com/etf/voo/">StockAnalysis.com</a> as of Nov 26, 2026; Taiwan dollar rate from Yahoo Finance (TWD=X).</li>
+      <li><b>TSM.</b> TSMC reports in Taiwan dollars and files a 20-F. Revenue and EPS were converted at the exchange rate on each period end, and EPS was scaled by the ADR ratio (1 ADR = 5 common shares). Computed trailing P/E is 22.3x. Webull shows 22.2x and StockAnalysis shows 23.2x, probably a different TTM window or exchange-rate convention. Exchange-rate moves are inside TSM's 33% dollar growth.</li>
+      <li><b>MU.</b> Fiscal 2026 revenue of $133.19B and GAAP EPS of $74.33 match Micron's own release. The 5-year median P/E (22.5x) includes months around the 2023 downturn when TTM EPS was negative, which are excluded as n/m.</li>
+      <li><b>MRVL.</b> Its 5-year median (58.9x) rests on only about 12 months of positive trailing EPS, so treat it loosely.</li>
+      <li><b>ANT.</b> No income-statement filings are in SEC company facts yet, so revenue and EPS come from Webull and match the S-1 figures. Only six public quarters exist and one monthly close, so there is no P/E history.</li>
+      <li><b>Fiscal years differ.</b> LULU ends in early February, MRVL in late January, LRCX in June, MU around Sep 3, AVGO in early November. "Latest fiscal year" is not the same window across names.</li>
+      <li><b>Correction to the earlier draft of this analysis.</b> A first note said Alphabet's Q2 2026 operating income was $40.2B and non-operating income about $99B. The 10-Q gives operating income of $40.8B and total other income of $98.0B, of which $99.0B was the equity-securities gain (<a href="https://www.sec.gov/Archives/edgar/data/1652044/000165204426000066/googexhibit991q22026.htm">Q2 release</a>). Trailing P/E, forward P/E and the conclusions did not change.</li>
+      <li><b>Funds.</b> Webull reported a P/E of 0 for the ETFs, so fund P/Es come from StockAnalysis and are aggregates of holdings, not something a broker computes.</li>
+    </ul>
+    <p class="note">Rebuild: <code>python scripts/build_page.py data index.html</code>. Charts come from <code>scripts/build_charts.py</code>, which documents the method but reads Webull exports that are not committed. Processed outputs are in <code>data/</code>.</p>
+  </section>
+</div>
+<script>
+(() => {
+  const tb = document.querySelector("#grid tbody"), ths = [...document.querySelectorAll("#grid th.s")];
+  ths.forEach(th => th.addEventListener("click", () => {
+    const k = +th.dataset.k, asc = th.getAttribute("aria-sort") !== "ascending";
+    ths.forEach(x => x.removeAttribute("aria-sort")); th.setAttribute("aria-sort", asc ? "ascending" : "descending");
+    const rows = [...tb.rows];
+    const val = r => { const c = r.cells[k]; if (k === 0) return c.textContent.trim(); const v = c.dataset.v; return v === "" || v === undefined ? null : parseFloat(v); };
+    rows.sort((a, b) => { const x = val(a), y = val(b); if (x === null && y === null) return 0; if (x === null) return 1; if (y === null) return -1; return (typeof x === "string" ? x.localeCompare(y) : x - y) * (asc ? 1 : -1); });
+    rows.forEach(r => tb.append(r));
+  }));
+})();
+</script>
+</body>
+</html>
