@@ -35,7 +35,19 @@ This rebuilds a widely shared chart ("Alphabet (GOOG): Revenue vs. Trailing P/E,
 - **Excluding one-offs:** removes "other income (expense), net" after tax (35% before 2018, 21% after). This is an approximation.
 - **Prices:** weekly closes from Webull, converted from dividend-adjusted to split-only using SEC dividends per share, and checked against Alpaca split-only closes (median error ≤0.1%). Webull's GOOG closes for Nov 2010 to Mar 2014 were 2× too high (missing the 2014 class-C split adjustment); this is detected and fixed in `pipeline.py`.
 - **S&P 500:** Robert Shiller's `ie_data.xls`, cross-checked against S&P Dow Jones Indices aggregates (±2–7%) and daily closes.
-- **Not verified:** that Q3'26 "missed estimates" and the ~$41B financing figure, which come from news headlines.
+- **Verified in the Nov 26 review (previously listed as not verified):** Q3'26 missed on both lines (adjusted EPS $2.67 vs $3.02 expected, revenue $127.58B vs $128.22B; [CNBC](https://www.cnbc.com/2026/10/28/alphabet-googl-earnings-q3-2026.html)), and the ~$41B financing is $29.0B of debt plus $12.4B of stock issued in Q3 ([Q3 release](https://www.sec.gov/Archives/edgar/data/1652044/000165204426000080/googexhibit991q32026.htm), cash flow statement).
+
+## Review notes (Nov 26, 2026)
+
+Added after checking the page against Alphabet's filings, earnings call and press coverage. The same notes appear on the live page under "Review notes".
+
+- **Confirmed against primary sources:** capex ($51.4B in Q3'26 vs $24.0B), zero buybacks in Q3 and the first nine months, other income (-$8.2B in Q3, +$98.0B in Q2), trailing free cash flow of $19.7B ([Q3 release](https://www.sec.gov/Archives/edgar/data/1652044/000165204426000080/googexhibit991q32026.htm), [Q3 call](https://abc.xyz/investor/events/event-details/2026/2026-Q3-Earnings-Call-2026-Ujou16CTw9/default.aspx), [Q2 release](https://www.sec.gov/Archives/edgar/data/1652044/000165204426000066/googexhibit991q22026.htm)).
+- **Corrected:** diluted shares. The page said 12.19B to 12.48B, which was net income divided by EPS (net income includes preferred dividends since Q2'26). Reported diluted weighted-average shares are 12,203M in Q3'25 and 12,368M in Q3'26 (+1.4%). The core P/E moves from 25.2x to about 25.1x. `pipeline.py` still derives shares as net income / EPS, so the processed dataset and its verification log still show the old implied counts; the page text now uses the reported ones.
+- **Blind spot, what the gains are:** the Q2 gain is a mark-to-market on SpaceX shares ($94.1B) and a private company widely identified as Anthropic ([Fortune](https://fortune.com/2026/07/22/anthropic-spacex-investments-google-earnings-biggest-ever-profit-quarter/)). It reversed to an $8.7B loss in Q3 and can swing again in Q4. Deferred income taxes rose from $0.9B to $27.8B because the gains are unrealized.
+- **Blind spot, tax rate:** Alphabet's disclosures imply about 22% to 23% tax on these items, not a flat 21%. With the share fix, the core P/E would be about 24.8x. The conclusion (roughly 25x, near the market) holds.
+- **Blind spot, baseline:** the 24.3x S&P 500 line uses Shiller as-reported earnings held flat after Sep 2026. A fund-level VOO trailing P/E is 21.6x ([StockAnalysis](https://stockanalysis.com/etf/voo/)), which would put GOOG about 17% above the market.
+- **What would change the thesis:** 2027 capex guidance, Cloud growth vs capex, free cash flow turning positive, buybacks restarting, Q4 marks on SpaceX and Anthropic. Long-term debt rose from $46.5B (Dec 31, 2025) to $125.1B (Sep 30, 2026).
+- See also the [watchlist valuation page](../watchlist-valuation/), which applies the same checks to a wider watchlist.
 
 ## Rebuild
 
