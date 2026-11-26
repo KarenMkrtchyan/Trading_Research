@@ -1,6 +1,6 @@
 # Is GOOG actually cheap?
 
-**Live page:** https://karenmkrtchyan.github.io/Trading_Research/goog-valuation/
+**Live page:** https://karenmkr.me/Trading_Research/goog-valuation/
 
 This rebuilds a widely shared chart ("Alphabet (GOOG): Revenue vs. Trailing P/E, with S&P 500 baseline and key events") from primary data, and checks every claim in it. It also adds five big-tech peers and a P/E that leaves out one-off gains. Data runs through the week of Nov 25, 2026. This is an analysis of valuation data, not investment advice.
 
