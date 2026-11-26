@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trading Research</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@600;700&family=Inter:wght@400;500&display=swap">
+<style>
+:root { --bg: #f7f8f6; --surface: #fff; --ink: #121513; --ink-2: #4a514c; --rule: #e2e5e1; --accent: #2a78d6; color-scheme: light; }
+@media (prefers-color-scheme: dark) { :root { --bg: #121413; --surface: #1a1c1b; --ink: #eef0ed; --ink-2: #bfc5c0; --rule: #2c302d; --accent: #3987e5; color-scheme: dark; } }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.55 Inter, system-ui, sans-serif; }
+main { max-width: 760px; margin: 0 auto; padding: 48px max(16px, env(safe-area-inset-left, 0px)) 64px; display: grid; gap: 20px; }
+h1 { font: 700 36px/1.1 "Familjen Grotesk", Inter, sans-serif; margin: 0; }
+p { margin: 0; color: var(--ink-2); }
+a.study { display: grid; grid-template-columns: 160px 1fr; gap: 16px; background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 14px; color: inherit; text-decoration: none; }
+a.study:hover, a.study:focus-visible { border-color: var(--accent); outline: none; }
+a.study img { width: 100%; border-radius: 6px; border: 1px solid var(--rule); }
+a.study h2 { font: 600 19px "Familjen Grotesk", Inter, sans-serif; margin: 0 0 4px; }
+.meta { font-size: 12.5px; color: var(--ink-2); margin-top: 6px; }
+@media (max-width: 520px) { a.study { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Trading Research</h1>
+  <p>Market and valuation studies, each rebuilt from primary data with the checks written down. Nothing here is investment advice.</p>
+  <a class="study" href="goog-valuation/">
+    <img src="goog-valuation/goog-pe-chart.png" alt="GOOG trailing P/E chart">
+    <div>
+      <h2>Is GOOG actually cheap?</h2>
+      <p>GOOG's reported P/E of 14x drops one-off gains of $131B. Without them it's about 25x, roughly the S&amp;P 500's level. The sell-off tracks the AI capex bill. Includes five big-tech peers.</p>
+      <div class="meta">Nov 2026 · SEC filings, exchange prices, Shiller S&amp;P 500 data</div>
+    </div>
+  </a>
+</main>
+</body>
+</html>

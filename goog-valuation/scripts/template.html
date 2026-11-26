@@ -1,0 +1,386 @@
+<title>Is GOOG Actually Cheap?</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column; three stacked panels share a single time axis (no dual axes), then peers, events, method. */
+:root {
+  --bg: #f7f8f6; --surface: #ffffff; --ink: #121513; --ink-2: #4a514c; --ink-3: #7b827d;
+  --rule: #e2e5e1; --grid: #eceeeb;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --ref: #6d736f; --bar: #86b6ef;
+  --good: #0ca30c; --warn: #b77a00; --crit: #d03b3b;
+  --font-display: "Familjen Grotesk", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121413; --surface: #1a1c1b; --ink: #eef0ed; --ink-2: #bfc5c0; --ink-3: #8a918c;
+  --rule: #2c302d; --grid: #242826;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --ref: #a3aaa5; --bar: #1c5cab;
+  --good: #0ca30c; --warn: #fab219; --crit: #e66767; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121413; --surface: #1a1c1b; --ink: #eef0ed; --ink-2: #bfc5c0; --ink-3: #8a918c;
+  --rule: #2c302d; --grid: #242826;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --ref: #a3aaa5; --bar: #1c5cab;
+  --good: #0ca30c; --warn: #fab219; --crit: #e66767; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 36px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(28px, 4.4vw, 42px); line-height: 1.08; font-weight: 700; }
+h2 { font-size: 22px; font-weight: 600; }
+h3 { font-size: 16px; font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font-family: var(--font-data); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+.lede { color: var(--ink-2); font-size: 16px; }
+header { display: grid; gap: 12px; }
+.num { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+
+/* headline figures */
+.figs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
+.fig { background: var(--surface); padding: 14px 16px; display: grid; gap: 2px; min-width: 0; }
+.fig .v { font-family: var(--font-data); font-size: 26px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.fig .k { font-size: 13px; color: var(--ink-2); }
+.fig .s { font-size: 12px; color: var(--ink-3); }
+.key { display: inline-block; width: 14px; height: 0; border-top: 2px solid; vertical-align: middle; margin-right: 6px; }
+.key.dash { border-top-style: dashed; }
+@media (max-width: 760px) { .figs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* controls */
+.controls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.controls > div { min-width: 0; max-width: 100%; }
+.seg { display: inline-flex; flex-wrap: wrap; max-width: 100%; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg button { font: 500 13px var(--font-body); color: var(--ink-2); background: transparent; border: 0; padding: 6px 11px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--rule); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.seg button:focus-visible, .chk input:focus-visible, select:focus-visible, .pin:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
+.chk { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; color: var(--ink-2); cursor: pointer; }
+.ctl-label { font-size: 12px; color: var(--ink-3); margin-right: 4px; }
+
+/* chart card */
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 18px 18px 10px; display: grid; gap: 6px; min-width: 0; }
+.panel-title { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; align-items: baseline; }
+.panel-title .sub { font-size: 12px; color: var(--ink-3); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12.5px; color: var(--ink-2); }
+.legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.chart { position: relative; width: 100%; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart text { font-family: var(--font-data); font-size: 11px; fill: var(--ink-3); }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.12); padding: 8px 10px; font-size: 12px; min-width: 170px; z-index: 5; }
+.tip .d { color: var(--ink-3); font-family: var(--font-data); margin-bottom: 4px; }
+.tip .r { display: flex; justify-content: space-between; gap: 14px; align-items: center; }
+.tip .r b { font-family: var(--font-data); font-weight: 500; color: var(--ink); }
+.tip .r span { color: var(--ink-2); }
+.event-detail { min-height: 44px; font-size: 13.5px; color: var(--ink-2); border-top: 1px solid var(--grid); padding-top: 8px; }
+.event-detail b { color: var(--ink); }
+
+/* findings */
+.findings { display: grid; gap: 14px; }
+.finding { display: grid; grid-template-columns: 4px 1fr; gap: 14px; }
+.finding::before { content: ""; border-radius: 2px; background: var(--rule); }
+.finding.hi::before { background: var(--s2); }
+.finding h3 { margin-bottom: 4px; }
+.finding p { color: var(--ink-2); }
+
+/* tables */
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { padding: 8px 12px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--grid); }
+th:first-child, td:first-child { text-align: left; }
+th { font-weight: 600; color: var(--ink-2); font-size: 12px; background: var(--bg); position: sticky; top: 0; }
+td { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+tr.sel td { background: color-mix(in srgb, var(--s1) 10%, transparent); }
+tbody tr { cursor: pointer; }
+tbody tr:hover td { background: color-mix(in srgb, var(--ink) 4%, transparent); }
+.chip { display: inline-block; font: 500 11px var(--font-body); padding: 1px 7px; border-radius: 999px; border: 1px solid currentColor; }
+.chip.ok { color: var(--good); } .chip.fix { color: var(--warn); } .chip.pub { color: var(--ink-3); } .chip.new { color: var(--s1); }
+
+/* events */
+.events { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); }
+.events li { display: grid; grid-template-columns: 30px 92px 1fr; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--grid); align-items: start; }
+.events li:last-child { border-bottom: 0; }
+.events .n { font-family: var(--font-data); font-size: 12px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: var(--bg); }
+.events .dt { font-family: var(--font-data); font-size: 12.5px; color: var(--ink-3); padding-top: 2px; }
+.events .tx { min-width: 0; font-size: 13.5px; }
+.events .tx .ver { display: block; color: var(--ink-3); font-size: 12.5px; margin-top: 2px; }
+@media (max-width: 560px) { .events li { grid-template-columns: 26px 1fr; } .events .dt { grid-column: 2; padding: 0; } .events .tx { grid-column: 2; } }
+
+details { border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); padding: 10px 14px; }
+details summary { cursor: pointer; font-weight: 600; font-family: var(--font-display); }
+details[open] summary { margin-bottom: 10px; }
+.log { font-family: var(--font-data); font-size: 12px; color: var(--ink-2); white-space: pre-wrap; overflow-x: auto; margin: 0; }
+.method { display: grid; gap: 10px; font-size: 14px; color: var(--ink-2); }
+.method ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; max-width: 75ch; }
+.note { font-size: 12.5px; color: var(--ink-3); }
+section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; min-width: 0; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Alphabet (GOOG) · valuation check · data as of <span id="asof"></span></div>
+    <h1>GOOG looks like it trades at 14 times earnings. Strip out one-off gains and it's closer to 25.</h1>
+    <p class="lede">The original chart was rebuilt from primary data: SEC filings for earnings, exchange prices for GOOG and five big-tech peers, and Shiller's S&amp;P 500 series for the market baseline. Every claim in it was re-checked. Use the controls to switch company, range and lines.</p>
+  </header>
+
+  <div class="figs" id="figs"></div>
+
+  <section>
+    <div class="controls">
+      <div><span class="ctl-label">Company</span>
+        <div class="seg" id="tickers" role="group" aria-label="Company"></div></div>
+      <div><span class="ctl-label">Range</span>
+        <div class="seg" id="ranges" role="group" aria-label="Time range"></div></div>
+      <label class="chk"><input type="checkbox" id="t-core" checked> Core P/E</label>
+      <label class="chk"><input type="checkbox" id="t-spx" checked> S&amp;P 500</label>
+      <label class="chk"><input type="checkbox" id="t-ev" checked> Events</label>
+    </div>
+
+    <div class="card">
+      <div class="panel-title"><h2 id="pe-title">Trailing P/E</h2><span class="sub">price ÷ last four quarters of diluted EPS, stepped on each 10-Q/10-K filing date</span></div>
+      <div class="legend" id="pe-legend"></div>
+      <div class="chart" id="pe-chart"></div>
+      <div class="event-detail" id="event-detail">Hover or tap a numbered pin to read the event.</div>
+    </div>
+
+    <div class="card">
+      <div class="panel-title"><h2>Quarterly revenue</h2><span class="sub">$ billions, as first reported</span></div>
+      <div class="chart" id="rev-chart"></div>
+    </div>
+
+    <div class="card">
+      <div class="panel-title"><h2>Where the profit came from</h2><span class="sub">quarterly net income, $ billions</span></div>
+      <div class="legend">
+        <span><span class="sw" style="background:var(--s2)"></span>Net income excluding non-operating items (after tax)</span>
+        <span><span class="sw" style="background:var(--s3)"></span>Non-operating gains / losses (after tax)</span>
+      </div>
+      <div class="chart" id="ni-chart"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>What the data says about the sell-off</h2>
+    <div class="findings" id="findings"></div>
+    <p class="note">This page is an analysis of valuation data, not a recommendation to buy or sell anything.</p>
+  </section>
+
+  <section>
+    <h2>Big tech now, against each company's own history</h2>
+    <p class="note">History is weekly since 2011. Percentile = share of past weeks with a lower P/E. Click a row to chart that company. *Amazon's earnings were close to zero before 2018, so its historical median isn't a useful yardstick.</p>
+    <div class="tbl-wrap"><table id="peers"></table></div>
+  </section>
+
+  <section>
+    <h2>Events on the chart, checked</h2>
+    <ol class="events" id="events"></ol>
+  </section>
+
+  <section class="method">
+    <h2>How this was built</h2>
+    <ul id="method"></ul>
+    <details><summary>Verification log</summary><pre class="log" id="log"></pre></details>
+    <details><summary>Quarterly data for the selected company</summary><div class="tbl-wrap"><table id="qtable"></table></div></details>
+  </section>
+</div>
+
+<script type="application/json" id="data">__DATA__</script>
+<script>
+(() => {
+const DATA = JSON.parse(document.getElementById("data").textContent);
+const T = DATA.tickers, SPX = DATA.spx, EVENTS = DATA.events;
+const NAMES = { GOOG: "Alphabet", MSFT: "Microsoft", AAPL: "Apple", AMZN: "Amazon", META: "Meta", NVDA: "Nvidia" };
+const state = { t: "GOOG", range: "all", core: true, spx: true, ev: true, pinned: null };
+const $ = (id) => document.getElementById(id);
+const NS = "http://www.w3.org/2000/svg";
+const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+const h = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const D = (s) => new Date(s + "T00:00:00Z");
+const fmtD = (d) => d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+const fx = (v, d = 1) => v == null || isNaN(v) ? "–" : v.toFixed(d) + "x";
+const pct = (v, d = 0) => (v > 0 ? "+" : "") + (100 * v).toFixed(d) + "%";
+const money = (v) => (v < 0 ? "−$" : "$") + Math.abs(v).toFixed(1) + "B";
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+const spxSeries = SPX.monthly.map(r => ({ d: D(r[0]), v: r[1], est: false }))
+  .concat(SPX.extension.map(r => ({ d: D(r[0]), v: r[1], est: true })));
+const lastSpx = spxSeries[spxSeries.length - 1];
+$("asof").textContent = fmtD(D(T.GOOG.stats.date));
+
+/* ---------- headline figures ---------- */
+function figs() {
+  const s = T[state.t].stats, box = $("figs"); box.replaceChildren();
+  const add = (v, k, sub, key) => { const f = h("div", "fig"); f.append(h("div", "v num", v));
+    const kk = h("div", "k"); if (key) { const sw = h("span", "key" + (key.dash ? " dash" : "")); sw.style.borderColor = key.c; kk.append(sw); } kk.append(k); f.append(kk, h("div", "s", sub)); box.append(f); };
+  add(fx(s.pe), `${state.t} P/E, reported`, `price $${s.close.toFixed(2)} ÷ EPS through ${fmtD(D(s.eps_thru))}`, { c: "var(--s1)" });
+  add(fx(s.core_pe), `${state.t} P/E, excluding one-offs`, `${Math.round(100 * s.core_pct)}th percentile of its history`, { c: "var(--s2)" });
+  add(fx(lastSpx.v), "S&P 500 P/E", "estimate: earnings held at Sep 2026", { c: "var(--ref)", dash: true });
+  add(pct(s.off_high), `${state.t} vs 52-week high`, `revenue ${pct(s.rev_yoy)} year over year`);
+}
+
+/* ---------- shared x scale ---------- */
+let X = null;
+function domain() {
+  const w = T[state.t].weekly; const end = D(w[w.length - 1][0]);
+  const yrs = { all: null, "5y": 5, "2y": 2, "1y": 1 }[state.range];
+  let start = yrs ? new Date(Date.UTC(end.getUTCFullYear() - yrs, end.getUTCMonth(), end.getUTCDate())) : D(w[0][0]);
+  if (start < D(w[0][0])) start = D(w[0][0]);
+  return [start, end];
+}
+function makeX(width, m) { const [a, b] = domain(); const r = (d) => m.l + (d - a) / (b - a) * (width - m.l - m.r); r.a = a; r.b = b; r.inv = (px) => new Date(+a + (px - m.l) / (width - m.l - m.r) * (b - a)); return r; }
+function niceTicks(lo, hi, n = 5) { const span = hi - lo, step0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(step0)));
+  const step = [1, 2, 2.5, 5, 10].map(s => s * mag).find(s => span / s <= n) || 10 * mag; const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(6)); return out; }
+function timeTicks(x) { const a = x.a.getUTCFullYear(), b = x.b.getUTCFullYear(), span = (x.b - x.a) / 3.15e10;
+  const out = []; if (span > 3) { const step = span > 9 ? 2 : 1; for (let y = a + 1; y <= b; y += step) out.push([new Date(Date.UTC(y, 0, 1)), String(y)]); }
+  else { const stepM = span > 1.5 ? 6 : 3; for (let y = a; y <= b; y++) for (let mo = 0; mo < 12; mo += stepM) { const d = new Date(Date.UTC(y, mo, 1)); if (d >= x.a && d <= x.b) out.push([d, d.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" }) + " " + String(y).slice(2)]); } }
+  return out; }
+function axes(svg, x, y, yt, H, m, W, yfmt) {
+  const g = el("g", {}, svg);
+  yt.forEach(v => { el("line", { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: css("--grid"), "stroke-width": 1 }, g);
+    const t = el("text", { x: m.l - 8, y: y(v) + 4, "text-anchor": "end" }, g); t.textContent = yfmt(v); });
+  timeTicks(x).forEach(([d, lab]) => { const t = el("text", { x: x(d), y: H - 6, "text-anchor": "middle" }, g); t.textContent = lab; });
+}
+function tipAt(box, px, py, rows, dateText) {
+  let tip = box.querySelector(".tip"); if (!tip) { tip = h("div", "tip"); box.appendChild(tip); }
+  tip.replaceChildren(h("div", "d", dateText));
+  rows.forEach(([label, val, color, dash]) => { const r = h("div", "r"); const l = h("span"); const k = h("span", "key" + (dash ? " dash" : "")); k.style.borderColor = color; l.append(k, label); r.append(l, h("b", null, val)); tip.append(r); });
+  tip.hidden = false; const bw = box.clientWidth, tw = tip.offsetWidth;
+  tip.style.left = Math.min(Math.max(px + 14, 0), bw - tw - 4) + (px + 14 + tw > bw ? -(tw + 28) * 0 : 0) + "px";
+  if (px + 14 + tw > bw) tip.style.left = Math.max(px - tw - 14, 0) + "px";
+  tip.style.top = Math.max(py - 10, 0) + "px";
+}
+const hideTip = (box) => { const t = box.querySelector(".tip"); if (t) t.hidden = true; };
+
+/* ---------- P/E panel ---------- */
+function pePanel() {
+  const box = $("pe-chart"); box.replaceChildren(); const W = box.clientWidth, H = W < 560 ? 300 : 380;
+  const m = { l: 40, r: 16, t: state.ev && state.t === "GOOG" ? 34 : 10, b: 24 };
+  const x = makeX(W, m); X = x;
+  const wk = T[state.t].weekly.map(r => ({ d: D(r[0]), px: r[1], pe: r[2], core: r[3] })).filter(r => r.d >= x.a && r.d <= x.b);
+  const sp = spxSeries.filter(r => r.d >= new Date(+x.a - 4e9) && r.d <= x.b);
+  let vals = wk.map(r => r.pe).concat(state.core ? wk.map(r => r.core) : []).concat(state.spx ? sp.map(r => r.v) : []).filter(v => v != null);
+  let hi = Math.max(...vals), lo = Math.min(...vals); const cap = state.t === "AMZN" ? 120 : 80; const clipped = hi > cap; hi = Math.min(hi, cap);
+  lo = Math.max(0, Math.floor(lo / 5) * 5 - 2); hi = Math.ceil(hi / 5) * 5 + 2;
+  const y = (v) => m.t + (1 - (Math.min(v, hi) - lo) / (hi - lo)) * (H - m.t - m.b);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, height: H, role: "img", "aria-label": `${state.t} trailing P/E chart` }, box);
+  axes(svg, x, y, niceTicks(lo, hi, 5), H, m, W, v => v + "x");
+  const line = (pts, color, width, dash) => { let dstr = "", pen = false; pts.forEach(p => { if (p.v == null) { pen = false; return; } dstr += (pen ? "L" : "M") + x(p.d).toFixed(1) + "," + y(p.v).toFixed(1); pen = true; });
+    el("path", { d: dstr, fill: "none", stroke: color, "stroke-width": width, "stroke-linejoin": "round", "stroke-dasharray": dash || "none" }, svg); };
+  if (state.spx) { line(sp.filter(p => !p.est), css("--ref"), 2, "5 4"); const e = sp.filter(p => p.est); if (e.length) line([sp.filter(p => !p.est).slice(-1)[0], ...e], css("--ref"), 2, "1.5 3"); }
+  if (state.core) line(wk.map(r => ({ d: r.d, v: r.core })), css("--s2"), 2);
+  line(wk.map(r => ({ d: r.d, v: r.pe })), css("--s1"), 2);
+  if (clipped) { const t = el("text", { x: W - m.r, y: m.t + 12, "text-anchor": "end" }, svg); t.textContent = `axis capped at ${cap}x`; }
+  // end labels
+  const last = wk[wk.length - 1]; const ends = [[last.pe, "--s1"]]; if (state.core) ends.push([last.core, "--s2"]); if (state.spx) ends.push([lastSpx.v, "--ref"]);
+  ends.forEach(([v, c]) => { if (v == null) return; el("circle", { cx: x(last.d), cy: y(v), r: 4, fill: css(c), stroke: css("--surface"), "stroke-width": 2 }, svg); });
+  // events
+  const evG = el("g", {}, svg);
+  if (state.ev && state.t === "GOOG") {
+    const evs = EVENTS.filter(e => D(e.date) >= x.a && D(e.date) <= x.b); let lastX = -99, row = 0;
+    evs.forEach(e => { const ex = x(D(e.date)); row = ex - lastX < 22 ? (row + 1) % 2 : 0; lastX = ex;
+      const cy = 11 + row * 0; const yy = row ? 26 : 11;
+      el("line", { x1: ex, x2: ex, y1: yy + 9, y2: H - m.b, stroke: css("--ink-3"), "stroke-width": 1, "stroke-dasharray": "2 3", opacity: 0.6 }, evG);
+      const g = el("g", { class: "pin", tabindex: 0, role: "button", "aria-label": `Event ${e.n}: ${e.title}`, style: "cursor:pointer" }, evG);
+      el("circle", { cx: ex, cy: yy, r: 9, fill: e.n === state.pinned ? css("--s1") : css("--ink"), stroke: css("--surface"), "stroke-width": 2 }, g);
+      const t = el("text", { x: ex, y: yy + 3.5, "text-anchor": "middle", style: `fill:${css("--bg")};font-size:10px;font-weight:500` }, g); t.textContent = e.n;
+      const show = () => { const d = $("event-detail"); d.replaceChildren(); const b = h("b", null, `${e.n}. ${e.title} `); d.append(b, document.createTextNode(`(${fmtD(D(e.date))}) — ${e.detail}`)); };
+      g.addEventListener("pointerenter", show); g.addEventListener("focus", show); g.addEventListener("click", () => { state.pinned = e.n; show(); pePanel(); });
+    });
+  }
+  // crosshair
+  const hair = el("line", { y1: m.t, y2: H - m.b, stroke: css("--ink-3"), "stroke-width": 1, visibility: "hidden" }, svg);
+  const hit = el("rect", { x: m.l, y: m.t + 0, width: W - m.l - m.r, height: H - m.t - m.b, fill: "transparent" }, svg);
+  svg.insertBefore(hit, evG); // pins stay above the hit area
+  const move = (ev) => { const r = svg.getBoundingClientRect(); const px = (ev.clientX - r.left) * (W / r.width); const d = x.inv(px);
+    let best = wk[0]; for (const p of wk) if (Math.abs(p.d - d) < Math.abs(best.d - d)) best = p;
+    let sb = sp[0]; for (const p of sp) if (Math.abs(p.d - best.d) < Math.abs(sb.d - best.d)) sb = p;
+    const hx = x(best.d); hair.setAttribute("x1", hx); hair.setAttribute("x2", hx); hair.setAttribute("visibility", "visible");
+    const rows = [[`${state.t} P/E`, fx(best.pe), css("--s1")]]; if (state.core) rows.push(["excl. one-offs", fx(best.core), css("--s2")]);
+    if (state.spx && sb) rows.push([sb.est ? "S&P 500 (est.)" : "S&P 500", fx(sb.v), css("--ref"), true]);
+    rows.push(["price", "$" + best.px.toFixed(2), "transparent"]);
+    tipAt(box, hx * (r.width / W), (ev.clientY - r.top), rows, "week of " + fmtD(best.d)); };
+  hit.addEventListener("pointermove", move); hit.addEventListener("pointerdown", move);
+  hit.addEventListener("pointerleave", () => { hair.setAttribute("visibility", "hidden"); hideTip(box); });
+  // legend + title
+  $("pe-title").textContent = `${NAMES[state.t]} (${state.t}) trailing P/E`;
+  const lg = $("pe-legend"); lg.replaceChildren();
+  const li = (c, txt, dash) => { const s = h("span"); const k = h("span", "key" + (dash ? " dash" : "")); k.style.borderColor = c; s.append(k, txt); lg.append(s); };
+  li("var(--s1)", `${state.t}, reported GAAP EPS`); if (state.core) li("var(--s2)", `${state.t}, EPS excluding non-operating items`);
+  if (state.spx) li("var(--ref)", "S&P 500 (Shiller; dotted = estimate)", true);
+}
+
+/* ---------- bar panels ---------- */
+function barPanel(id, getVals, stacked) {
+  const box = $(id); box.replaceChildren(); const W = box.clientWidth, H = W < 560 ? 150 : 170, m = { l: 40, r: 16, t: 8, b: 24 };
+  const x = makeX(W, m);
+  const q = T[state.t].quarters.map(r => ({ d: D(r[0]), rev: r[1], ni: r[2], oie: r[3], avail: r[8] }))
+    .filter(r => r.d >= new Date(+x.a - 60 * 864e5) && r.d <= x.b);
+  const rows = q.map(r => ({ d: r.d, parts: getVals(r) }));
+  let lo = 0, hi = 0; rows.forEach(r => { let pos = 0, neg = 0; r.parts.forEach(p => { if (p.v > 0) pos += p.v; else neg += p.v; }); hi = Math.max(hi, pos); lo = Math.min(lo, neg); });
+  const yt = niceTicks(lo, hi, 4); lo = Math.min(lo, yt[0]); hi = Math.max(hi, yt[yt.length - 1]);
+  const y = (v) => m.t + (1 - (v - lo) / (hi - lo)) * (H - m.t - m.b);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, height: H, role: "img" }, box);
+  axes(svg, x, y, yt, H, m, W, v => "$" + v);
+  const n = Math.max(rows.length, 1); const bw = Math.max(1.5, Math.min(22, (W - m.l - m.r) / n - 2));
+  rows.forEach(r => { const cx = x(new Date(+r.d - 45 * 864e5)); if (cx < m.l - 2) return; let pos = 0, neg = 0;
+    const g = el("g", { style: "cursor:default" }, svg);
+    r.parts.forEach(p => { if (p.v == null || p.v === 0) return; const a = p.v > 0 ? pos : neg, b = a + p.v; if (p.v > 0) pos = b; else neg = b;
+      const y1 = y(Math.max(a, b)), y2 = y(Math.min(a, b)); el("rect", { x: cx - bw / 2, y: y1 + (stacked && a !== 0 ? 1 : 0), width: bw, height: Math.max(1, y2 - y1 - (stacked && a !== 0 ? 1 : 0)), rx: Math.min(2, bw / 4), fill: css(p.c) }, g); });
+    const hitR = el("rect", { x: cx - Math.max(bw, 8) / 2, y: m.t, width: Math.max(bw, 8), height: H - m.t - m.b, fill: "transparent" }, g);
+    const qn = `Q${Math.floor(r.d.getUTCMonth() / 3) + 1} ${r.d.getUTCFullYear()} (quarter ended ${fmtD(r.d)})`;
+    const show = (ev) => { const bb = svg.getBoundingClientRect(); tipAt(box, cx * (bb.width / W), (ev.clientY || bb.top + 20) - bb.top, r.parts.map(p => [p.label, p.v == null ? "–" : money(p.v), css(p.c)]), qn); };
+    hitR.addEventListener("pointermove", show); hitR.addEventListener("pointerdown", show); hitR.addEventListener("pointerleave", () => hideTip(box)); });
+  if (lo < 0) el("line", { x1: m.l, x2: W - m.r, y1: y(0), y2: y(0), stroke: css("--ink-3"), "stroke-width": 1 }, svg);
+}
+const taxRate = (d) => d < D("2018-01-01") ? 0.35 : 0.21;
+function revPanel() { barPanel("rev-chart", r => [{ v: r.rev, c: "--bar", label: "revenue" }]); }
+function niPanel() { barPanel("ni-chart", r => { const one = r.oie == null ? 0 : r.oie * (1 - taxRate(r.d));
+  return [{ v: r.ni - one, c: "--s2", label: "excl. non-operating" }, { v: one, c: "--s3", label: "non-operating, after tax" }]; }, true); }
+
+/* ---------- findings ---------- */
+function findings() {
+  const g = T.GOOG.stats, box = $("findings"); box.replaceChildren();
+  const peers = ["MSFT", "AAPL", "AMZN", "META", "NVDA"].map(t => [t, T[t].stats]);
+  const add = (title, body, hi) => { const f = h("div", "finding" + (hi ? " hi" : "")); const d = h("div"); d.append(h("h3", null, title), h("p", null, body)); f.append(d); box.append(f); };
+  DATA.findings.forEach(f => add(f.title, f.body, f.hi));
+}
+
+/* ---------- peers table ---------- */
+function peerTable() {
+  const tb = $("peers"); tb.replaceChildren(); const th = h("thead"); const tr = h("tr");
+  ["Company", "Price", "vs 52w high", "P/E", "Pctile", "Median", "P/E excl. one-offs", "Pctile", "Revenue y/y", "TTM free cash flow", "Prior TTM", "EPS through"].forEach(c => tr.append(h("th", null, c)));
+  th.append(tr); tb.append(th); const body = h("tbody");
+  Object.keys(T).forEach(t => { const s = T[t].stats; const r = h("tr", t === state.t ? "sel" : "");
+    [`${NAMES[t]} (${t})`, "$" + s.close.toFixed(2), pct(s.off_high, 1), fx(s.pe), Math.round(100 * s.pe_pct) + "th", fx(s.pe_med) + (t === "AMZN" ? "*" : ""), fx(s.core_pe), Math.round(100 * s.core_pct) + "th", pct(s.rev_yoy, 1), money(s.ttm_fcf), money(s.ttm_fcf_prev), D(s.eps_thru).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" })].forEach(v => r.append(h("td", null, v)));
+    r.tabIndex = 0; const go = () => { state.t = t; render(); }; r.addEventListener("click", go); r.addEventListener("keydown", e => { if (e.key === "Enter") go(); });
+    body.append(r); });
+  tb.append(body);
+}
+function qTable() {
+  const tb = $("qtable"); tb.replaceChildren(); const tr = h("tr");
+  ["Quarter end", "Revenue $B", "Net income $B", "Non-op. $B", "Diluted EPS", "EPS excl. non-op.", "TTM EPS", "TTM EPS excl.", "Available"].forEach(c => tr.append(h("th", null, c)));
+  const th = h("thead"); th.append(tr); tb.append(th); const body = h("tbody");
+  T[state.t].quarters.slice().reverse().forEach(q => { const r = h("tr"); q.forEach((v, i) => r.append(h("td", null, v == null ? "–" : typeof v === "number" ? v.toFixed(i >= 4 && i <= 7 ? 2 : 2) : v))); body.append(r); });
+  tb.append(body);
+}
+function events() { const ol = $("events"); ol.replaceChildren();
+  EVENTS.forEach(e => { const li = h("li"); const tx = h("div", "tx"); const chip = h("span", "chip " + e.status, { ok: "verified", fix: "corrected", pub: "public record", new: "added" }[e.status]);
+    tx.append(h("span", null, e.title + " "), chip, h("span", "ver", e.check)); li.append(h("span", "n", String(e.n)), h("span", "dt", fmtD(D(e.date))), tx); ol.append(li); }); }
+function method() { const ul = $("method"); ul.replaceChildren(); DATA.method.forEach(m => ul.append(h("li", null, m))); $("log").textContent = DATA.log.join("\n"); }
+
+/* ---------- controls ---------- */
+function controls() {
+  const tk = $("tickers"); tk.replaceChildren(); Object.keys(T).forEach(t => { const b = h("button", null, t); b.setAttribute("aria-pressed", t === state.t); b.onclick = () => { state.t = t; render(); }; tk.append(b); });
+  const rg = $("ranges"); rg.replaceChildren(); [["all", "2011–"], ["5y", "5Y"], ["2y", "2Y"], ["1y", "1Y"]].forEach(([k, lab]) => { const b = h("button", null, lab); b.setAttribute("aria-pressed", k === state.range); b.onclick = () => { state.range = k; render(); }; rg.append(b); });
+}
+["core", "spx", "ev"].forEach(k => { $("t-" + k).addEventListener("change", e => { state[k] = e.target.checked; render(); }); });
+$("t-ev").closest("label").title = "Event pins are shown for GOOG";
+
+function render() { controls(); figs(); pePanel(); revPanel(); niPanel(); peerTable(); qTable(); }
+findings(); events(); method(); render();
+let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { pePanel(); revPanel(); niPanel(); }, 120); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
+new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+})();
+</script>
